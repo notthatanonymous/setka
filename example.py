@@ -1,5 +1,10 @@
 import torchvision.transforms
 import torchvision.datasets
+import torch.nn
+import setka
+import setka.base
+import setka.pipes
+
 
 class CIFAR10(setka.base.DataSet):
     def __init__(self,
@@ -47,7 +52,6 @@ class CIFAR10(setka.base.DataSet):
             image, label = self.test_data[index]
             return {'image': image, 'label': label}
 
-import torch.nn
 
 class SimpleModel(torch.nn.Module):
     def __init__(self, channels, input_channels=3, n_classes=10):
@@ -76,9 +80,6 @@ class SimpleModel(torch.nn.Module):
 
         return x
 
-import setka
-import setka.base
-import setka.pipes
 
 
 def loss(pred, input):
