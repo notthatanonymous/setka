@@ -1,117 +1,88 @@
-import torchvision.transforms
-import torchvision.datasets
-import torch.nn
-import setka
+import torch
 import setka.base
 import setka.pipes
+import sklearn.datasets
+import numpy
 
+name = 'iris_test'
 
-class CIFAR10(setka.base.Dataset):
-    def __init__(self,
-                 root='~/datasets'):
+class Iris(setka.base.Dataset):
+    def __init__(self, valid_split=0.1, test_split=0.1):
+        super()
+        data = sklearn.datasets.load_iris()
 
-        train_transforms = torchvision.transforms.Compose([
-            torchvision.transforms.RandomCrop(32, padding=4),
-            torchvision.transforms.RandomHorizontalFlip(),
-            torchvision.transforms.ToTensor(),
-            torchvision.transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-        ])
+        X = data['data']
+        y = data['target']
 
-        test_transforms = torchvision.transforms.Compose([
-            torchvision.transforms.ToTensor(),
-            torchvision.transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-        ])
+        n_valid = int(y.size * valid_split)
+        n_test =  int(y.size * test_split)
 
-        self.train_data = torchvision.datasets.CIFAR10(
-            '~/datasets', train=True, download=True,
-            transform=train_transforms)
-        self.test_data = torchvision.datasets.CIFAR10(
-            '~/datasets', train=False, download=True,
-            transform=test_transforms)
+        order = numpy.random.permutation(y.size)
 
-        self.n_valid = int(0.05 * len(self.train_data))
+        X = X[order, :]
+        y = y[order]
 
-        self.subsets = ['train', 'valid', 'test']
+        self.data = {
+            'valid': X[:n_valid, :],
+            'test': X[n_valid:n_valid + n_test, :],
+            'train': X[n_valid + n_test:, :]
+        }
+
+        self.targets = {
+            'valid': y[:n_valid],
+            'test': y[n_valid:n_valid + n_test],
+            'train': y[n_valid + n_test:]
+        }
 
     def getlen(self, subset):
-        if subset == 'train':
-            return len(self.train_data) - self.n_valid
-        elif subset == 'valid':
-            return self.n_valid
-        elif subset == 'test':
-            return len(self.test_data)
+        return len(self.targets[subset])
 
     def getitem(self, subset, index):
-        if subset == 'train':
-            image, label = self.train_data[self.n_valid + index]
-            return {'image': image, 'label': label}
-        elif subset == 'valid':
-            image, label = self.train_data[index]
-            return {'image': image, 'label': label}
-        elif subset == 'test':
-            image, label = self.test_data[index]
-            return {'image': image, 'label': label}
+        features = torch.Tensor(self.data[subset][index])
+        class_id = torch.Tensor(self.targets[subset][index:index+1])
+        return [features], [class_id], subset + "_" + str(index)
 
 
-class SimpleModel(torch.nn.Module):
-    def __init__(self, channels, input_channels=3, n_classes=10):
+class IrisNet(setka.base.Network):
+    def __init__(self):
         super().__init__()
+        self.fc1 = torch.nn.Linear(4, 100)
+        self.fc2 = torch.nn.Linear(100, 3)
 
-        modules = []
-
-        in_c = input_channels
-        for out_c in channels:
-            modules.append(torch.nn.Conv2d(in_c, out_c, 3, padding=1))
-            modules.append(torch.nn.BatchNorm2d(out_c))
-            modules.append(torch.nn.ReLU(inplace=True))
-            modules.append(torch.nn.MaxPool2d(2))
-
-            in_c = out_c
-
-        self.encoder = torch.nn.Sequential(*modules)
-        self.decoder = torch.nn.Linear(in_c, n_classes)
-
-    def __call__(self, input):
-        x = input['image']
-        # print(x.shape)
-        # print(self.encoder)
-        x = self.encoder(x).mean(dim=-1).mean(dim=-1)
-        x = self.decoder(x)
-
-        return x
+    def forward(self, x):
+        return [self.fc2(self.fc1(x[0]))]
 
 
-
-def loss(pred, input):
-    return torch.nn.functional.cross_entropy(pred, input['label'])
-
-
-def acc(pred, input):
-    return (input['label'] == pred.argmax(dim=1)).float().sum() / float(pred.size(0))
+ds = Iris()
+model = IrisNet()
 
 
-
-ds = CIFAR10()
-model = SimpleModel(channels=[8, 16, 32, 64])
-
-trainer = setka.base.Trainer(
-    pipes=[
-        setka.pipes.DatasetHandler(ds, 32, workers=4, timeit=True,
-                                   shuffle={'train': True, 'valid': True, 'test': False},
-                                   epoch_schedule=[
-                                       {'mode': 'train', 'subset': 'train'},
-                                       {'mode': 'valid', 'subset': 'train', 'n_iterations': 100},
-                                       {'mode': 'valid', 'subset': 'valid'},
-                                       {'mode': 'valid', 'subset': 'test'}]),
-        setka.pipes.ModelHandler(model),
-        setka.pipes.LossHandler(loss),
-        setka.pipes.ComputeMetrics([loss, acc]),
-        setka.pipes.ProgressBar(),
-        setka.pipes.OneStepOptimizers([setka.base.Optimizer(model, torch.optim.Adam, lr=3.0e-2)]),
-        setka.pipes.TuneOptimizersOnPlateau('acc', max_mode=True, subset='valid', lr_factor=0.3, reset_optimizer=True),
-        setka.pipes.MakeCheckpoints('acc', max_mode=True)
-    ]
-)
+def loss(pred, targ):
+    return torch.nn.functional.cross_entropy(pred[0], targ[0][:, 0].long())
 
 
-trainer.run_train(10)
+def accuracy(pred, targ):
+    predicted = pred[0].argmax(dim=1)
+    # print(predicted.size())
+    # print(targ[0].size())
+    return (predicted == targ[0][:, 0].long()).sum(), predicted.numel()
+
+
+trainer = setka.base.Trainer(model,
+                             optimizers=[setka.base.OptimizerSwitch(model, torch.optim.Adam, lr=3.0e-3)],
+                             criterion=loss,
+                             pipes=[
+                                setka.pipes.ComputeMetrics(metrics=[loss, accuracy]),
+                                setka.pipes.ReduceLROnPlateau(metric='loss'),
+                                setka.pipes.ExponentialWeightAveraging(),
+                                setka.pipes.WriteToTensorboard(name=name),
+                                setka.pipes.Logger(name=name)
+                              ])
+
+for index in range(100):
+    trainer.train_one_epoch(ds, subset='train')
+    trainer.validate_one_epoch(ds, subset='train')
+    trainer.validate_one_epoch(ds, subset='valid')
+
+# assert(trainer._metrics['valid']['accuracy'] > 0.9)
+print(f"\n\n\nScore: {trainer._metrics['valid']['accuracy']}\n\n\n")
