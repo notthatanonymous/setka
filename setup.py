@@ -22,6 +22,7 @@ setuptools.setup(
         'tqdm',
         'matplotlib',
         'scikit-image',
+        'scikit-learn',
         'termcolor',
         'pandas',
         'efficientnet_pytorch',
