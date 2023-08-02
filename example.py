@@ -196,7 +196,7 @@ model = SimpleModel(channels=[8, 16, 32, 64])
 trainer = setka.base.Trainer(
     model,
     criterion=loss,
-    optimizers=[setka.base.OptimizerSwitch(model, torch.optim.Adam, lr=3.0e-4)],
+    optimizers=[setka.base.Optimizer(model, torch.optim.Adam, lr=3.0e-2)],
     pipes=[setka.pipes.ComputeMetrics([loss, acc]),
                setka.pipes.ExponentialWeightAveraging(epoch_start=2)]
 )
