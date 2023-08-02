@@ -185,7 +185,7 @@ trainer = setka.base.Trainer(
         setka.pipes.ProgressBar(),
         setka.pipes.OneStepOptimizers([setka.base.Optimizer(model, torch.optim.Adam, lr=3.0e-2)]),
 #        setka.pipes.TuneOptimizersOnPlateau('acc', max_mode=True, subset='valid', lr_factor=0.3, reset_optimizer=True),
-        setka.pipes.MakeCheckpoints('acc', max_mode=True),
+        setka.pipes.Checkpointer('acc', max_mode=True),
         setka.pipes.MultilineProgressBar()
     ]
 )
