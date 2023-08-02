@@ -170,25 +170,42 @@ def acc(pred, input):
 ds = CIFAR10()
 model = SimpleModel(channels=[8, 16, 32, 64])
 
+# trainer = setka.base.Trainer(
+#     pipes=[
+#         setka.pipes.DatasetHandler(ds, 32, workers=4, timeit=True,
+#                                    shuffle={'train': True, 'valid': True, 'test': False},
+#                                    epoch_schedule=[
+#                                        {'mode': 'train', 'subset': 'train'},
+#                                        {'mode': 'valid', 'subset': 'train', 'n_iterations': 100},
+#                                        {'mode': 'valid', 'subset': 'valid'},
+#                                        {'mode': 'valid', 'subset': 'test'}]),
+#         setka.pipes.ModelHandler(model),
+#         setka.pipes.LossHandler(loss),
+#         setka.pipes.ComputeMetrics([loss, acc]),
+#         setka.pipes.ProgressBar(),
+#         setka.pipes.OneStepOptimizers([setka.base.Optimizer(model, torch.optim.Adam, lr=3.0e-2)]),
+# #        setka.pipes.TuneOptimizersOnPlateau('acc', max_mode=True, subset='valid', lr_factor=0.3, reset_optimizer=True),
+#         setka.pipes.Checkpointer('acc', max_mode=True)
+# #        setka.pipes.MultilineProgressBar()
+#     ]
+# )
+
+
+# trainer.run_train(10)
+
 trainer = setka.base.Trainer(
-    pipes=[
-        setka.pipes.DatasetHandler(ds, 32, workers=4, timeit=True,
-                                   shuffle={'train': True, 'valid': True, 'test': False},
-                                   epoch_schedule=[
-                                       {'mode': 'train', 'subset': 'train'},
-                                       {'mode': 'valid', 'subset': 'train', 'n_iterations': 100},
-                                       {'mode': 'valid', 'subset': 'valid'},
-                                       {'mode': 'valid', 'subset': 'test'}]),
-        setka.pipes.ModelHandler(model),
-        setka.pipes.LossHandler(loss),
-        setka.pipes.ComputeMetrics([loss, acc]),
-        setka.pipes.ProgressBar(),
-        setka.pipes.OneStepOptimizers([setka.base.Optimizer(model, torch.optim.Adam, lr=3.0e-2)]),
-#        setka.pipes.TuneOptimizersOnPlateau('acc', max_mode=True, subset='valid', lr_factor=0.3, reset_optimizer=True),
-        setka.pipes.Checkpointer('acc', max_mode=True),
-        setka.pipes.MultilineProgressBar()
-    ]
+    model,
+    criterion=loss,
+    optimizers=[setka.base.OptimizerSwitch(model, torch.optim.Adam, lr=3.0e-4)],
+    pipes=[setka.pipes.ComputeMetrics([loss, acc]),
+               setka.pipes.ExponentialWeightAveraging(epoch_start=2)]
 )
 
+for index in range(5):
+    trainer.train_one_epoch(ds, subset='train', batch_size=128)
+    trainer.validate_one_epoch(ds, subset='train', batch_size=128)
+    trainer.validate_one_epoch(ds, subset='valid', batch_size=128)
 
-trainer.run_train(10)
+
+# assert(trainer._metrics['valid']['accuracy'] > 0.9)
+print(f"\n\n\nScore: {trainer._metrics['valid']['accuracy']}\n\n\n")
