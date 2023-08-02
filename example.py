@@ -1,4 +1,4 @@
-mport torch
+import torch
 import setka
 import torchvision.datasets
 import setka.base
