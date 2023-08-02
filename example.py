@@ -1,6 +1,6 @@
 import torch
 import setka
-import torchvision.datasets
+import torchvision.datasets as datasets
 import setka.base
 import setka.pipes
 import os
