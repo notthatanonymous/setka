@@ -81,7 +81,7 @@ import setka.base
 import setka.pipes
 import torch.nn
 
-class CIFAR10(setka.base.DataSet):
+class CIFAR10(setka.base.Dataset):
     def __init__(self,
                  root='~/datasets'):
 
