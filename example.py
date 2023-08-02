@@ -198,7 +198,7 @@ trainer = setka.base.Trainer(
     criterion=loss,
     optimizers=[setka.base.Optimizer(model, torch.optim.Adam, lr=3.0e-2)],
     pipes=[setka.pipes.ComputeMetrics([loss, acc]),
-               setka.pipes.ExponentialWeightAveraging(epoch_start=2)]
+               setka.pipes.WeightAveraging(epoch_start=2)]
 )
 
 for index in range(5):
