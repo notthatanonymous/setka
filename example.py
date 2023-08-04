@@ -5,7 +5,7 @@ import setka.base
 import setka.pipes
 import torch.nn
 
-class MNIST(setka.base.Dataset):
+class CIFAR10(setka.base.Dataset):
     def __init__(self,
                  root='~/datasets'):
 
@@ -21,10 +21,10 @@ class MNIST(setka.base.Dataset):
             torchvision.transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
         ])
 
-        self.train_data = torchvision.datasets.MNIST(
+        self.train_data = torchvision.datasets.CIFAR10(
             '~/datasets', train=True, download=True,
             transform=train_transforms)
-        self.test_data = torchvision.datasets.MNIST(
+        self.test_data = torchvision.datasets.CIFAR10(
             '~/datasets', train=False, download=True,
             transform=test_transforms)
 
@@ -90,7 +90,7 @@ def acc(pred, input):
     return (input['label'] == pred.argmax(dim=1)).float().sum() / float(pred.size(0))
 
 
-ds = MNIST()
+ds = CIFAR10()
 net = SimpleModel(channels=[8, 16, 32, 64])
 
     
