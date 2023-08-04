@@ -96,6 +96,8 @@ net = SimpleModel(channels=[8, 16, 32, 64])
     
 trainer = setka.base.Trainer(
     pipes=[
+        setka.pipes.DatasetHandler(ds, 32, workers=4, timeit=False,
+                                    shuffle={'train': True, 'valid': True, 'test': False}),
         setka.pipes.ModelHandler(net),
         setka.pipes.LossHandler(loss),
         setka.pipes.OneStepOptimizers([setka.base.Optimizer(net, torch.optim.Adam, lr=3.0e-4)]),
@@ -103,10 +105,7 @@ trainer = setka.base.Trainer(
         setka.pipes.WeightAveraging(epoch_start=2)]
 )
 
-for index in range(5):
-    trainer.train_one_epoch(ds, subset='train', batch_size=128)
-    trainer.validate_one_epoch(ds, subset='train', batch_size=128)
-    trainer.validate_one_epoch(ds, subset='valid', batch_size=128)
+trainer.run_train(5)
 
 
 # assert(trainer._metrics['valid']['accuracy'] > 0.9)
