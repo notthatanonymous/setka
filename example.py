@@ -96,7 +96,7 @@ net = SimpleModel(channels=[8, 16, 32, 64])
     
 trainer = setka.base.Trainer(
     pipes=[
-        setka.pipes.DatasetHandler(ds, 32, workers=4, timeit=False,
+        setka.pipes.DatasetHandler(ds, 512, workers=0, timeit=False,
                                     shuffle={'train': True, 'valid': True, 'test': False}),
         setka.pipes.ModelHandler(net),
         setka.pipes.LossHandler(loss),
