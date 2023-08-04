@@ -109,7 +109,7 @@ trainer.run_train(5)
 
 
 # assert(trainer._metrics['valid']['accuracy'] > 0.9)
-print(f"\n\n\nScore: {trainer._metrics}\n\n\n")
+print(f"\n\n\nScore: {trainer._metrics['valid']['acc']}\n\n\n")
 
 
 # import torchvision.transforms
