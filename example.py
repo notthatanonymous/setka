@@ -97,8 +97,8 @@ net = SimpleModel(channels=[8, 16, 32, 64])
 trainer = setka.base.Trainer(
     net,
 #    criterion=loss,
-    optimizers=[setka.base.Optimizer(net, torch.optim.Adam, lr=3.0e-4)],
-    pipes=[setka.pipes.ComputeMetrics([loss, acc]),
+    pipes=[setka.pipes.OneStepOptimizers([setka.base.Optimizer(net, torch.optim.Adam, lr=3.0e-4)]),
+        setka.pipes.ComputeMetrics([loss, acc]),
                 setka.pipes.WeightAveraging(epoch_start=2)]
 )
 
