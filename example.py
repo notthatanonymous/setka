@@ -5,7 +5,7 @@ import setka.base
 import setka.pipes
 import torch.nn
 
-class CIFAR10(setka.base.Dataset):
+class MNIST(setka.base.Dataset):
     def __init__(self,
                  root='~/datasets'):
 
@@ -21,10 +21,10 @@ class CIFAR10(setka.base.Dataset):
             torchvision.transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
         ])
 
-        self.train_data = torchvision.datasets.CIFAR10(
+        self.train_data = torchvision.datasets.MNIST(
             '~/datasets', train=True, download=True,
             transform=train_transforms)
-        self.test_data = torchvision.datasets.CIFAR10(
+        self.test_data = torchvision.datasets.MNIST(
             '~/datasets', train=False, download=True,
             transform=test_transforms)
 
@@ -53,7 +53,7 @@ class CIFAR10(setka.base.Dataset):
             
             
 class SimpleModel(torch.nn.Module):
-    def __init__(self, channels, input_channels=3, n_classes=10):
+    def __init__(self, channels, input_channels=1, n_classes=10):
         super().__init__()
 
         modules = []
@@ -109,7 +109,7 @@ trainer.run_train(5)
 
 
 # assert(trainer._metrics['valid']['accuracy'] > 0.9)
-print(f"\n\n\nScore: {trainer._metrics['valid']['accuracy']}\n\n\n")
+print(f"\n\n\nScore: {trainer._metrics}\n\n\n")
 
 
 # import torchvision.transforms
