@@ -176,7 +176,7 @@ trainer = setka.base.Trainer(
                                    shuffle={'train': True, 'valid': True, 'test': False},
                                    epoch_schedule=[
                                        {'mode': 'train', 'subset': 'train'},
-                                       {'mode': 'valid', 'subset': 'train', 'n_iterations': 100},
+                                       {'mode': 'valid', 'subset': 'train', 'n_iterations': 10},
                                        {'mode': 'valid', 'subset': 'valid'},
                                        {'mode': 'valid', 'subset': 'test'}]),
         setka.pipes.ModelHandler(model),
@@ -191,7 +191,7 @@ trainer = setka.base.Trainer(
 )
 
 
-trainer.run_train(10)
+trainer.run_train(5)
 
 # trainer = setka.base.Trainer(
 #     model,
